@@ -15,7 +15,7 @@ import spacy
 from spacy.tokenizer import Tokenizer
 from spacy.attrs import POS, ORTH, LEMMA
 from string import punctuation, digits, ascii_lowercase
-from collections import Counter
+from collections import Counter, OrderedDict
 
 from wordcloud import WordCloud
 from PIL import Image
@@ -73,7 +73,7 @@ def stop_words():
                   "www.amazon.com", "http://www.amazon.com", "aws", "prime",
                   "kindle", "\t", "shareholders", "amazon", "jeffrey", "executive",
                   "inc.","inc", "amazonians","bezos", "jeff", "founder", "chief",
-                  "officer", "day","sincerely"])
+                  "officer", "day","sincerely", "\uf8e7\uf8e7", "u.s.", "u.k.", "''",])
     lines.extend(list(digits))
     lines.extend(list(ascii_lowercase))
     return lines
@@ -103,9 +103,14 @@ def simple_tokenizer(remove_stops=True, min_word_length=3):
             pass
         elif len(w.text) <= min_word_length:
             pass
+        elif w.text == "1997":
+            pass
+        elif w.text.lower().strip() == "customers":
+            words.append("customer")
         else:
-            words.append(w)
-    return words
+            words.append(w.text.lower().strip())
+            
+    return [w for w in words]
 
 
 
@@ -113,18 +118,14 @@ def grey_scale_func(word, font_size, position, orientation, random_state=None, *
     return "hsl(0, 0%%, %d%%)" % random.randint(0, 30)
 
 
-def generate_frequency_table(n=200):
+def generate_frequency_table(n=10):
     
-    word_counts = Counter(simple_tokenizer())
-    table=['<htm><body><table border="1">']
+    word_counts = Counter(simple_tokenizer()).most_common(n)
+    table=['<html><body><table border="1"><tr><th id="title" colspan="2"><b>Top %s Words</b></th></tr><tr><th headers="title"><em>Word</em></th><th headers="title"><em>Frequency</em></th></tr>' % n]
 
-    x = 0
-    for i in word_counts.keys():
-        if x <= n:
-            x+=1
-            table.append(r'<tr><td>{}</td><td>{}</td></tr>'.format(i, word_counts[i]))
-        else:
-            break
+    for i in word_counts:
+        
+        table.append(r'<tr><td>{}</td><td>{}</td></tr>'.format(i[0], i[1]))
     table.append('</table></body></html>')
     
     html = "".join(table)
@@ -140,7 +141,7 @@ def generate_wordcloud():
 
     imgmask = np.array(Image.open(get_abspath("amazon-logo.jpg")))
     words = simple_tokenizer()
-    text = " ".join([w.text.lower() for w in words])
+    text = " ".join(words)
     wc = WordCloud(background_color="white", max_font_size=35, max_words=500, mask=imgmask, margin=2, random_state=1).generate(text=text)
 
     plt.title("Jeff Bezos - Amazon Shareholders Letters (1997-2016)")
