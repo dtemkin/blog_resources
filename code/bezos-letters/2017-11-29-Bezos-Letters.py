@@ -66,18 +66,16 @@ def load_letters():
 
 
 def stop_words():
-    file = open(get_abspath("stopwords.ls"), mode="r")
+    file = open(get_abspath("bezos-stopwords.ls"), mode="r")
     lines = [l.rstrip().lower() for l in file.readlines() if l != "\n"]
     lines.extend(list(punctuation))
     lines.extend(['"', "'", "--", "-", "/", ",", ".", "...", "amazon.com",
                   "www.amazon.com", "http://www.amazon.com", "aws", "prime",
-                  "kindle", "\t", "shareholders", "amazon", "jeffery",
-                  "bezos", "jeff", "founder", "chief", "officer", "day",
-                  "sincerely"])
-
+                  "kindle", "\t", "shareholders", "amazon", "jeffrey", "executive",
+                  "inc.","inc", "amazonians","bezos", "jeff", "founder", "chief",
+                  "officer", "day","sincerely"])
     lines.extend(list(digits))
     lines.extend(list(ascii_lowercase))
-
     return lines
 
 def update_tokenizer(tokenizer):
@@ -107,22 +105,47 @@ def simple_tokenizer(remove_stops=True, min_word_length=3):
             pass
         else:
             words.append(w)
-    return " ".join([w.text for w in words])
+    return words
+
+
 
 def grey_scale_func(word, font_size, position, orientation, random_state=None, **kwargs):
     return "hsl(0, 0%%, %d%%)" % random.randint(0, 30)
 
 
+def generate_frequency_table(n=200):
+    
+    word_counts = Counter(simple_tokenizer())
+    table=['<htm><body><table border="1">']
+
+    x = 0
+    for i in word_counts.keys():
+        if x <= n:
+            x+=1
+            table.append(r'<tr><td>{}</td><td>{}</td></tr>'.format(i, word_counts[i]))
+        else:
+            break
+    table.append('</table></body></html>')
+    
+    html = "".join(table)
+    htmlfile = get_abspath("bezos-table.html")
+    if os.path.isfile(htmlfile):
+        os.remove(htmlfile)
+    with open(htmlfile, mode="w") as f:
+        f.write(html)
+        f.flush()
+    f.close()
+      
 def generate_wordcloud():
 
     imgmask = np.array(Image.open(get_abspath("amazon-logo.jpg")))
     words = simple_tokenizer()
-
-    wc = WordCloud(background_color="white", max_font_size=35, max_words=500, mask=imgmask, margin=2, random_state=1).generate(text=words)
+    text = " ".join([w.text.lower() for w in words])
+    wc = WordCloud(background_color="white", max_font_size=35, max_words=500, mask=imgmask, margin=2, random_state=1).generate(text=text)
 
     plt.title("Jeff Bezos - Amazon Shareholders Letters (1997-2016)")
     plt.imshow(wc.recolor(color_func=grey_scale_func, random_state=3), interpolation="bilinear")
     wc.to_file("wordcloud.png")
     plt.axis("off")
-
+generate_frequency_table()
 generate_wordcloud()
