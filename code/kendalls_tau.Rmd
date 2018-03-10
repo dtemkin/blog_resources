@@ -1,0 +1,108 @@
+---
+title: "KendallsTau"
+author: "Dan"
+date: "March 8, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Setup
+
+```{r data}
+data.example.1 <- data.frame(restaurant_ranks_bill=runif(20, 1, 10), restaurant_ranks_joe=runif(20, 1, 10))
+
+
+```
+
+## Global Objects
+```{r globals}
+
+# number of concordant pairs
+
+C = function(t) {   
+  r_idx = row(t)
+  c_idx = col(t)
+  sum(t * mapply(function(rowx, colx){
+    sum(t[(r_idx > rowx) & (c_idx > colx)])},
+    rowx = r_idx, colx = c_idx))}
+
+# number of discordant pairs
+D = function(t) {
+  r_idx = row(t)
+  c_idx = col(t)
+  sum(t * mapply( function(rowx, colx){
+      sum(t[(r_idx > rowx) & (c_idx < colx)])
+  },
+    rowx = r_idx, colx = c_idx) )
+}
+
+not_tied_xy <- function(t){
+  r_idx = row(t)
+  c_idx = col(t)
+  ntx = sum(t * mapply( function(rowx){
+    sum(t[(r_idx != rowx)])}, rowx=r_idx))
+  nty = sum(t * mapply( function(colx){
+    sum(t[(c_idx != colx)])
+  }, colx=c_idx))
+  
+  return(c(ntx, nty))
+  
+}
+
+```
+
+
+## Kendall's Tau-a
+
+equal to concordant minus discordant pairs, divided by a factor to account for total number of pairs (sample size).
+
+```{r kendalls_tau_a}
+
+k_tau_a <- function(t){
+  t <- as.matrix(t)
+  n <- sum(t)
+  taua <- (P(t) - Q(t)) / (n*(n-1)/2)
+} 
+
+
+```
+
+## Kendall's Tau-b
+
+explicit accounting for ties--ie, both members of the data pair have the same value; this value is equal to concordant minus discordant pairs divided by a term representing the geometric mean between the number of pairs not tied on x (X0) and the number not tied on y (Y0).
+
+```{r kendalls_tau_b, echo=FALSE}
+
+
+kendalls_tau_b <- function(t){
+  t <- as.matrix(t)
+  n <- sum(t)
+  xt <- not_tied_xy(t)
+  taub <- (P(t) - Q(t)) / ( (P(t) + Q(t) + xt[1])*(P(t) + Q(t) + xt[0]) )^0.5 
+  
+} 
+
+
+
+```
+
+## Kendall's Tau-c
+
+larger-table variant also optimized for non-square tables; equal to concordant minus discordant pairs multiplied by a factor that adjusts for table size).
+
+```{r kendalls_tau_c, echo=FALSE}
+
+kendalls_tau_c <- function(t){
+  t <- as.matrix(t)
+  n <- sum(t)
+  m <- min(dim(t))
+  tauc <- P(t)-Q(t)*( (2*m)/n^2*(m-1) )
+} 
+
+
+```
+
+## Kendall's Significance Tests
