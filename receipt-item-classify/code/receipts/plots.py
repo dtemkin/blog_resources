@@ -119,24 +119,6 @@ class DataExploration(object):
                                              (x, str(round(cntfreqs[x]*100, 4)))
                                              for x in cntfreqs],
                                   hoverinfo='text')
-            # if n is None:
-            #    cnt_ord = sorted([(k, cnti[k]) for k in cnti], key=lambda x: x[1], reverse=True)
-            #    cnttot2 = cnttot
-            # else:
-            #    cnt_ord = sorted([(k, cnti[k]) for k in cnti.most_common(n)], key=lambda x: x[1], reverse=True)
-            #    cnttot2 = sum(cnt.most_common(n).values())
-                
-            # ks, vs, fs = [], [], []
-            # for cx in cnt_ord:
-            #     ks.append(cx[0])
-            #     vs.append(cx[1])
-            #     fs.append(round(cx[1]/cnttot2, 4))
-            
-            # trace_tab = go.Table(header={'values': ["Item", 'Count', 'Frequency']},
-            #                     cells={"values": [ks, vs, fs],
-            #                            "align": "left"}, 
-            #                     visible=(True if clx == data_items[0][0]
-            #                              else False))
             
             btnx = {"label": clx, 'method': 'update',
                     "args":[{'visible': [True if clx == tt[0] else False

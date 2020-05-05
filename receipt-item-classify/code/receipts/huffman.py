@@ -6,6 +6,7 @@ import os
 import csv
 from collections import Counter
 from string import ascii_lowercase, digits, punctuation
+import numpy as np
 
 
 class HeapNode:
@@ -69,7 +70,8 @@ class Encoder(BaseEncoder):
         super().__init__()
         self.heap = []
         self.mx_string = 0
-        self._encoded_list = []
+        self._encoded_training = []
+        self.padding_arr = []
     # functions for compression:
 
     def frequencies(self, strings):
@@ -125,58 +127,66 @@ class Encoder(BaseEncoder):
         encoded_text = [self._map[character] for character in strings]
         return encoded_text
 
-    def transform(self, data, addtl_pad=20, *args, **kwargs):
-        pad_size = kwargs.get('pad_size', 'auto')
-        pad_value = kwargs.get('pad_value', '0')
-        mx_train_string = kwargs.get("max_training_string", None)
+    def transform(self, data, *args, **kwargs):
         out = kwargs.get("out", int)
+        oper = kwargs.get("oper", 'testing')
         items = []
-        _encoded_list = []
-        for d in data:
-            chars = list(d)
-            enc_text = self._encode(chars)
-            _encoded_list.append(enc_text)
-        for r in _encoded_list:
-            if not self.mx_string:
-                self.mx_string = 0
-                if len("".join(r))+addtl_pad > self.mx_string:
-                    self.mx_string = len("".join(r)) + addtl_pad
-            else:
-                if len("".join(r)) + addtl_pad > self.mx_string:
-                    pad_cut = (len("".join(r)) + addtl_pad) - self.mx_string
+        _encoded_test = []
+        if oper == 'training':
+            for e in self._encoded_training:
+                string = "".join(e)
+                string_pad_size = self.mx_string - len(string)
+                
+                int_arr = [int(x) for x in 
+                           list(string)+self.padding_arr[:string_pad_size]]
+                items.append(np.asarray(int_arr))
+        else:
+            for d in data:
+                chars = list(d)
+                enc_text = self._encode(chars)
+                string = "".join(enc_text)
+                if len("".join(enc_text)) > self.mx_string:
+                    pass
+                else:
+                    _encoded_test.append(enc_text)
                     
-            
-        pad = self.generate_padding(pad_size=, 
-                                    pad_value='0')
+                    string_pad_size = self.mx_string - len(string)
+                    int_arr = [int(x) for x in 
+                               list(string)+self.padding_arr[:string_pad_size]]
+                    items.append(np.asarray(int_arr))
+                    
+        return np.matrix(items)
 
-        FileUtils.dump(_encoded_list)
-        for i in _encoded_list:
-            string = "".join(i)
-            string_pad_size = self.mx_string - len(string)
-            int_arr = [int(x) for x in 
-                       list(string+pad[:string_pad_size])]
-            items.append(int_arr)
-        return items
-
-    def generate_padding(self, pad_size, pad_value='0'):
+    def generate_padding(self, pad_size, pad_value='9'):
         if pad_size == 'auto':
             pad_size = 0
         elif type(pad_size) is int:
             pad_size = pad_size
 
-        padding = "".join([str(pad_value) for i in range(pad_size)])
+        padding = [str(pad_value) for i in range(pad_size)]
         return padding
 
-    def fit(self, data, *args, **lkwargs):
+    def fit(self, data, *args, **kwargs):
+        pad_value = kwargs.get("pad_value", '9')
+        add_pad = kwargs.get("addtl_pad", 20)
         if type(data) is list:
             text = [t.strip() for t in data]
         else:
             text = data.strip()
-        
+            
         frequency = self.frequencies(text)
         self.make_heap(frequency)
         self.merge_nodes()
         self.make_codes()
+        
+        for t in text:
+            chars = list(t)
+            enc_text = self._encode(chars)
+            self._encoded_training.append(enc_text)
+            if len("".join(enc_text)) > self.mx_string + add_pad:
+                self.mx_string = len("".join(enc_text)) + add_pad
+        self.padding_arr = self.generate_padding(pad_size=self.mx_string,
+                                                 pad_value=pad_value)
 
     def remove_padding(self, encoded_text):
         encoded_text = encoded_text[:len(encoded_text)-self.mx_string]
@@ -188,4 +198,4 @@ class Encoder(BaseEncoder):
 
     def fit_transform(self, data, *args, **kwargs):
         self.fit(data)
-        return self.transform(data)
+        return self.transform(data, oper='training')
