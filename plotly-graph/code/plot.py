@@ -41,16 +41,21 @@ for team in teams:
     
     losses_dict.update({team: 1})
     losses_dict.update({tx: 1 for tx in teams if tx not in losses_dict})
-    
-    
+
     tot_games = {t: wins_dict[t]+losses_dict[t] for t in teams}
-    pct_wins = {t: round(wins_dict[t]/tot_games[t], 4) for t in teams}
-    
-    
-    trace = go.Bar(x=list(pct_wins.keys()), y=list(pct_wins.values()),
-                   name=team + " wins", visible=False, hoverinfo="text", 
-                   hovertext=[f"Wins: {wins_dict[tm1]}\nTotal:{tot_games[tm1]}" 
-                              for tm1 in teams])
+    pct_winloss = {t: round((wins_dict[t]-losses_dict[t])/tot_games[t], 4) for t in teams}
+    colors = ("#57eb77", "#e6575e")
+    win_loss_colors = [(colors[0] if pct_winloss[t] > 0 else colors[1]) for t in pct_winloss]
+
+    trace = go.Bar(x=list(pct_winloss.keys()), y=list(pct_winloss.values()),
+                   name=team + " win/loss percent", visible=False, hoverinfo="text",
+                   hovertext=[f"{team} VS. {tm1}</br>"
+                              f"</br>Wins: {wins_dict[tm1]}"
+                              f"</br>Losses: {losses_dict[tm1]}"
+                              f"</br>Total:{tot_games[tm1]}"
+                              f"</br>Win/Loss Pct: {pct_winloss[tm1]}"
+                              for tm1 in teams],
+                   marker_color=win_loss_colors)
     
     btnx = {"label": team, 'method': 'update',
             "args": [{'visible': [True if team == tmx else False 
@@ -64,13 +69,13 @@ fig.update_layout(
         go.layout.Updatemenu(buttons=buttons, direction="down",
                              pad={"r": 5, "t": 0}, showactive=True,
                              xanchor="right", x=1.3, yanchor="top", y=1.10)],
-        'title_text': 'NBA Win Percentage by Team',
+        'title_text': 'NBA Win/Loss Percentage by Team',
         'xaxis': dict(title='Opponent', tickangle=45),
-        'yaxis_title_text': 'Win Percent',
-        "width": 750, "height": 650,
+        'yaxis_title_text': 'Win/Loss Percent',
+        "width": 740, "height": 750,
         "autosize": True})
 
 config = {"displayModeBar": False}
 
-fig.write_html('barchart-plotly.html', include_plotlyjs=False, config=config)
+fig.write_html('plot.html', include_plotlyjs=False, config=config)
 fig.show()
