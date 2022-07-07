@@ -95,9 +95,9 @@ def vendor_diamond_bins(data):
             "carat": {"keys": list(carat_bins_dict.keys()), 
                       'pcts': abs2rel(carat_bins_dict)}}
 
-def vendor_charbars(df, vendors=[1, 2, 3, 4], chars=8, max_profit=0):
+def vendor_charbars(df, ttl, vendors=[1, 2, 3, 4], chars=8, max_profit=0):
     fig1, axes1 = plt.subplots(len(vendors), chars, figsize=(35,15))
-    fig1.suptitle("Diamond Characteristics by Vendor (Profit > 0)", 
+    fig1.suptitle(ttl, 
                   size=24)
 
     # For each vendor --
@@ -161,11 +161,11 @@ def vendor_charbars(df, vendors=[1, 2, 3, 4], chars=8, max_profit=0):
     plt.setp(axes1[-1, 6], xlabel="Symmetry")
     plt.setp(axes1[-1, 7], xlabel="Profit")
     # Label y axes
-    plt.setp(axes1[0, 0], ylabel="Vendor 1")
-    plt.setp(axes1[1, 0], ylabel="Vendor 2")
-    plt.setp(axes1[2, 0], ylabel="Vendor 3")
-    plt.setp(axes1[3, 0], ylabel="Vendor 4")
-    plt.savefig("Diamond Characteristics by Vendor (Profit over 0).png")
+    for i in range(len(vendors)):
+        
+        plt.setp(axes1[i, 0], ylabel=f"Vendor {vendors[i]}")
+
+    plt.savefig(ttl+".png")
     return plt
 
 

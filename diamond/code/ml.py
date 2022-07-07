@@ -74,6 +74,7 @@ def bid_math(df, price_limit, price_add):
     profit = 0
     over_bids = [0]
     under_bids = [0]
+    successful_bid_ids = []
 
     for t in trunc_df.index:
         prc_diff = trunc_df['predicted_price'].loc[t] - trunc_df['actual_price'].loc[t]
@@ -81,9 +82,11 @@ def bid_math(df, price_limit, price_add):
         if prc_diff > 0:
             profit += prft
             over_bids.append(prc_diff)
+            successful_bid_ids.append(t)
         elif prc_diff < 0:
             under_bids.append(prc_diff)
         else:
+            successful_bid_ids.append(t)
             profit += prft
 
     print(f"Num Bids: {len(trunc_df.index)} | Total Profit: {profit} \n#################\n\
@@ -93,3 +96,4 @@ def bid_math(df, price_limit, price_add):
     Under-Bids:\n\tCount: {len(under_bids)}\n\tTotal: {sum(under_bids)}\
     \n\tMax: {max(under_bids)}\n\tMin: {min(under_bids)}\n\tAvg: {np.mean(under_bids)}")
 
+    return successful_bid_ids
